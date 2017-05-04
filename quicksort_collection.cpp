@@ -41,7 +41,7 @@ void insertion_sort(It first, It last, Cmp cmp)
 template<typename It>
 void insertion_sort(It first, It last)
 {
-	insertion_sort(first, last, std::less<>());
+    insertion_sort(first, last, std::less<>());
 }
 
 } // namespace detail
@@ -68,41 +68,60 @@ It random(It first, It last)
 template<typename It>
 It median(It first, It last)
 {
-	return std::next(first, std::distance(first,last)/2);
+    return std::next(first, std::distance(first,last)/2);
 }
 
 } // namespace selector
 
 template<typename BiIt,
-         typename pivot_func = decltype(pivot::random<BiIt>),
+         typename Pivot_func = decltype(pivot::random<BiIt>),
          typename Cmp = std::less<>>
-void quicksort_1(BiIt first, BiIt last, pivot_func pf = pivot::random, Cmp cmp = Cmp{})
+void impl1_quicksort(BiIt first, BiIt last, Pivot_func pivot_func = pivot::random, Cmp cmp = Cmp{})
 {
-    if (first < last)
-    {
-        auto pivot = pf(first, last);
-        auto pivot_value = *pivot;
-        std::iter_swap(first, pivot);
+    if (std::distance(first, last) < 2)
+        return;
 
-        auto greater_than_pivot = std::partition(std::next(first), last, [pivot_value, cmp](const auto& val) {
-            return cmp(val, pivot_value);
-        });
+    auto pivot = pivot_func(first, last);
+    auto pivot_value = *pivot;
+    std::iter_swap(first, pivot);
 
-        std::iter_swap(std::prev(greater_than_pivot), first);
+    auto greater_than_pivot = std::partition(std::next(first), last, [pivot_value, cmp](const auto& val) {
+        return cmp(val, pivot_value);
+    });
 
-        quicksort_1(first, std::prev(greater_than_pivot), pf, cmp);
-        quicksort_1(greater_than_pivot, last, pf, cmp);
-    }
+    std::iter_swap(std::prev(greater_than_pivot), first);
+
+    impl1_quicksort(first, std::prev(greater_than_pivot), pivot_func, cmp);
+    impl1_quicksort(greater_than_pivot, last, pivot_func, cmp);
 }
 
-//#lastif // include guard
+#define TEST_ALGORITHM(NAME)                                                    \
+template<class I>                                                               \
+void test_ ## NAME (I first, I last)                                            \
+{                                                                               \
+    std::for_each(first, last, [](auto t) {                                     \
+        NAME ## _quicksort(begin(t), end(t));                                   \
+        std::cout << std::boolalpha << std::is_sorted(begin(t), end(t)) << ","; \
+    });                                                                         \
+    std::cout << "\n";                                                          \
+}
+
+TEST_ALGORITHM(impl1)
 
 int main()
 {
-    std::vector<int> input {5,3,1,2,5,6,7,8,12,4,2,3,5,1,3,5,0};
-    quicksort_1(input.begin(), input.end());
+    using std::vector;
 
-    for (const auto& i : input)
-        std::cout << i << " ";
-    std::cout << '\n';
+    auto empty = vector<int> {};
+    auto singleton = vector<int> {1};
+    auto doubleton = vector<int> {9,4};
+    auto random = vector<int> {8,1,4,2,6,0,9,5,3,7};
+    auto sorted = vector<int> {0,1,2,3,4,5,6,7,8,9};
+    auto reversed = vector<int> {9,8,7,6,5,4,3,2,1};
+    auto almost_sorted = vector<int> {0,1,2,3,5,4,6,9,8};
+    auto many_unique = vector<int> {1,2,0,1,0,0,2,2,1};
+
+    auto inputs = vector<vector<int>> {empty, singleton, doubleton, random, sorted, reversed, almost_sorted, many_unique};
+
+    test_impl1(std::begin(inputs), std::end(inputs));
 }
