@@ -76,10 +76,16 @@ It median(It first, It last)
 template<typename BiIt,
          typename Pivot_func = decltype(pivot::random<BiIt>),
          typename Cmp = std::less<>>
-void impl1_quicksort(BiIt first, BiIt last, Pivot_func pivot_func = pivot::random, Cmp cmp = Cmp{})
+void sequential_quicksort(BiIt first, BiIt last, Pivot_func pivot_func = pivot::random, Cmp cmp = Cmp{})
 {
     if (std::distance(first, last) < 2)
         return;
+
+    // if (std::distance(first, last) < 40)
+    // {
+    //     detail::insertion_sort(first, last);
+    //     return;
+    // }
 
     auto pivot = pivot_func(first, last);
     auto pivot_value = *pivot;
@@ -91,8 +97,8 @@ void impl1_quicksort(BiIt first, BiIt last, Pivot_func pivot_func = pivot::rando
 
     std::iter_swap(std::prev(greater_than_pivot), first);
 
-    impl1_quicksort(first, std::prev(greater_than_pivot), pivot_func, cmp);
-    impl1_quicksort(greater_than_pivot, last, pivot_func, cmp);
+    sequential_quicksort(first, std::prev(greater_than_pivot), pivot_func, cmp);
+    sequential_quicksort(greater_than_pivot, last, pivot_func, cmp);
 }
 
 #define TEST_ALGORITHM(NAME)                                                    \
@@ -106,7 +112,7 @@ void test_ ## NAME (I first, I last)                                            
     std::cout << "\n";                                                          \
 }
 
-TEST_ALGORITHM(impl1)
+TEST_ALGORITHM(sequential)
 
 int main()
 {
@@ -123,5 +129,5 @@ int main()
 
     auto inputs = vector<vector<int>> {empty, singleton, doubleton, random, sorted, reversed, almost_sorted, many_unique};
 
-    test_impl1(std::begin(inputs), std::end(inputs));
+    test_sequential(std::begin(inputs), std::end(inputs));
 }
