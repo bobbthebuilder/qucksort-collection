@@ -45,6 +45,16 @@ void insertion_sort(It first, It last)
     insertion_sort(first, last, std::less<>());
 }
 
+template<typename It>
+void sort_small_instances(It first, It last)
+{
+    if (std::distance(first, last) < 40)
+    {
+        insertion_sort(first, last);
+        return;
+    }
+}
+
 } // namespace detail
 
 namespace pivot
@@ -82,11 +92,7 @@ void sequential_quicksort(BiIt first, BiIt last, Pivot_func pivot_func = pivot::
     if (std::distance(first, last) < 2)
         return;
 
-    // if (std::distance(first, last) < 40)
-    // {
-    //     detail::insertion_sort(first, last);
-    //     return;
-    // }
+    //detail::sort_small_instances(first, last); // optimization
 
     auto pivot = pivot_func(first, last);
     auto pivot_value = *pivot;
@@ -110,11 +116,7 @@ void parallel1_quicksort(BiIt first, BiIt last, int depth = 0, Pivot_func pivot_
     if (std::distance(first, last) < 2)
         return;
 
-    // if (std::distance(first, last) < 40)
-    // {
-    //     detail::insertion_sort(first, last);
-    //     return;
-    // }
+    //detail::sort_small_instances(first, last); // optimization
 
     auto pivot = pivot_func(first, last);
     auto pivot_value = *pivot;
@@ -128,7 +130,7 @@ void parallel1_quicksort(BiIt first, BiIt last, int depth = 0, Pivot_func pivot_
 
     if (depth < 5)
     {
-        std::thread t1([first, greater_than_pivot, depth, pivot_func, cmp]() {
+        std::thread t1([=]() {
             parallel1_quicksort(first, std::prev(greater_than_pivot), depth+1, pivot_func, cmp);
         });
 
@@ -140,7 +142,6 @@ void parallel1_quicksort(BiIt first, BiIt last, int depth = 0, Pivot_func pivot_
         parallel1_quicksort(first, std::prev(greater_than_pivot), depth+1, pivot_func, cmp);
         parallel1_quicksort(greater_than_pivot, last, depth+1, pivot_func, cmp);
     }
-
 }
 
 #define TEST_ALGORITHM(NAME)                                                    \
