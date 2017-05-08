@@ -22,6 +22,7 @@
 
 #include <random>
 #include <vector>
+#include <thread>
 #include <iostream>
 #include <algorithm>
 
@@ -101,6 +102,47 @@ void sequential_quicksort(BiIt first, BiIt last, Pivot_func pivot_func = pivot::
     sequential_quicksort(greater_than_pivot, last, pivot_func, cmp);
 }
 
+template<typename BiIt,
+         typename Pivot_func = decltype(pivot::random<BiIt>),
+         typename Cmp = std::less<>>
+void parallel1_quicksort(BiIt first, BiIt last, int depth = 0, Pivot_func pivot_func = pivot::random, Cmp cmp = Cmp{})
+{
+    if (std::distance(first, last) < 2)
+        return;
+
+    // if (std::distance(first, last) < 40)
+    // {
+    //     detail::insertion_sort(first, last);
+    //     return;
+    // }
+
+    auto pivot = pivot_func(first, last);
+    auto pivot_value = *pivot;
+    std::iter_swap(first, pivot);
+
+    auto greater_than_pivot = std::partition(std::next(first), last, [pivot_value, cmp](const auto& val) {
+        return cmp(val, pivot_value);
+    });
+
+    std::iter_swap(std::prev(greater_than_pivot), first);
+
+    if (depth < 5)
+    {
+        std::thread t1([first, greater_than_pivot, depth, pivot_func, cmp]() {
+            parallel1_quicksort(first, std::prev(greater_than_pivot), depth+1, pivot_func, cmp);
+        });
+
+        parallel1_quicksort(greater_than_pivot, last, depth+1, pivot_func, cmp);
+        t1.join();
+    }
+    else
+    {
+        parallel1_quicksort(first, std::prev(greater_than_pivot), depth+1, pivot_func, cmp);
+        parallel1_quicksort(greater_than_pivot, last, depth+1, pivot_func, cmp);
+    }
+
+}
+
 #define TEST_ALGORITHM(NAME)                                                    \
 template<class I>                                                               \
 void test_ ## NAME (I first, I last)                                            \
@@ -113,6 +155,7 @@ void test_ ## NAME (I first, I last)                                            
 }
 
 TEST_ALGORITHM(sequential)
+TEST_ALGORITHM(parallel1)
 
 int main()
 {
@@ -130,4 +173,5 @@ int main()
     auto inputs = vector<vector<int>> {empty, singleton, doubleton, random, sorted, reversed, almost_sorted, many_unique};
 
     test_sequential(std::begin(inputs), std::end(inputs));
+    test_parallel1(std::begin(inputs), std::end(inputs));
 }
