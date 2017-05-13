@@ -144,6 +144,16 @@ void naive_parallel_quicksort(BiIt first, BiIt last, int depth = 0, Pivot_func p
     }
 }
 
+namespace helpers
+{
+    template <class C>
+    void insert_random_ints(C& c)
+    {
+        std::iota(c.begin(), c.end(), 0);
+        std::random_shuffle(c.begin(), c.end());
+    }
+} // namespace helpers
+
 #define TEST_ALGORITHM(NAME)                                                    \
 template<class I>                                                               \
 void test_ ## NAME (I first, I last)                                            \
@@ -170,8 +180,18 @@ int main()
     auto reversed = vector<int> {9,8,7,6,5,4,3,2,1};
     auto almost_sorted = vector<int> {0,1,2,3,5,4,6,9,8};
     auto many_unique = vector<int> {1,2,0,1,0,0,2,2,1};
+    auto wave = vector<int> {1,2,3,2,1,2,3,4,5,6,7,6,5,4,3,2,1};
 
-    auto inputs = vector<vector<int>> {empty, singleton, doubleton, random, sorted, reversed, almost_sorted, many_unique};
+    auto random100 = vector<int> (100);
+    helpers::insert_random_ints(random100);
+
+    auto random1000 = vector<int> (1000);
+    helpers::insert_random_ints(random1000);
+
+    auto inputs = vector<vector<int>> {empty, singleton, doubleton,
+                                       random, sorted, reversed,
+                                       almost_sorted, many_unique,
+                                       wave, random100, random1000};
 
     test_sequential(std::begin(inputs), std::end(inputs));
     test_naive_parallel(std::begin(inputs), std::end(inputs));
