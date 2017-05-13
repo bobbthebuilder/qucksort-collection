@@ -149,8 +149,11 @@ namespace helpers
     template <class C>
     void insert_random_ints(C& c)
     {
+        std::random_device rd;
+        std::mt19937 g(rd());
+
         std::iota(c.begin(), c.end(), 0);
-        std::random_shuffle(c.begin(), c.end());
+        std::shuffle(c.begin(), c.end(), g);
     }
 } // namespace helpers
 
